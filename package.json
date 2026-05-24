@@ -8,9 +8,14 @@
     "vscode": "^1.85.0"
   },
   "categories": ["Other"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YYNanFeng/researchtracker-vscode.git"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],
+  "extensionKind": ["workspace"],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
