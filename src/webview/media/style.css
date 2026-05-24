@@ -178,6 +178,8 @@ body {
 .dot.parked { background: #BDBDBD; }
 .dot.abandoned { background: #757575; }
 
+.dot.proposition { background: #B39DDB; border-radius: 3px; }
+
 .dot.exp-planned { background: #90CAF9; }
 .dot.exp-running { background: #FFB74D; }
 .dot.exp-completed { background: #81C784; }

@@ -76,6 +76,23 @@ export class GraphPanel {
       filePath: `.research/ideas/${idea.id.replace('idea-', '')}/README.md`,
     }));
 
+    const projectInfo = scanner.project;
+    const propClaim = projectInfo?.researchQuestion || '（未设置研究问题）';
+
+    const propNodes = [{
+      id: 'prop-root',
+      nodeType: 'proposition',
+      claim: propClaim,
+      ideaId: '',
+      filePath: '.research/README.md',
+    }];
+
+    const propIdeaLinks = ideas.map(idea => ({
+      source: 'prop-root',
+      target: idea.id,
+      relation: 'claim_of',
+    }));
+
     const experimentNodes: Array<{
       id: string;
       nodeType: string;
@@ -150,13 +167,15 @@ export class GraphPanel {
         </div>
         <div class="header-actions">
           <div class="action-group">
-            <span class="group-label">实验节点</span>
-            <button id="btn-expand-all" class="toolbar-btn active" title="展开所有实验">
-              <span class="btn-icon">⊞</span>
-            </button>
-            <button id="btn-collapse-all" class="toolbar-btn" title="收起所有实验">
-              <span class="btn-icon">⊟</span>
-            </button>
+            <span class="group-label">命题</span>
+            <button id="btn-props-show" class="toolbar-btn active" title="显示命题"><span class="btn-icon">⊞</span></button>
+            <button id="btn-props-hide" class="toolbar-btn" title="隐藏命题"><span class="btn-icon">⊟</span></button>
+          </div>
+          <div class="action-divider"></div>
+          <div class="action-group">
+            <span class="group-label">实验</span>
+            <button id="btn-expand-all" class="toolbar-btn active" title="展开所有实验"><span class="btn-icon">⊞</span></button>
+            <button id="btn-collapse-all" class="toolbar-btn" title="收起所有实验"><span class="btn-icon">⊟</span></button>
           </div>
           <div class="action-divider"></div>
           <div class="action-group">
@@ -176,6 +195,9 @@ export class GraphPanel {
         <span class="legend-item"><span class="dot refuted"></span>已反驳</span>
         <span class="legend-item"><span class="dot parked"></span>暂停</span>
         <span class="legend-sep"></span>
+        <span class="legend-section">命题</span>
+        <span class="legend-item"><span class="dot proposition"></span>命题</span>
+        <span class="legend-sep"></span>
         <span class="legend-section">实验</span>
         <span class="legend-item"><span class="dot exp-planned"></span>计划中</span>
         <span class="legend-item"><span class="dot exp-running"></span>运行中</span>
@@ -191,8 +213,10 @@ export class GraphPanel {
   </div>
   <script>
     const ideaNodes = ${JSON.stringify(ideaNodes)};
+    const propNodes = ${JSON.stringify(propNodes)};
     const experimentNodes = ${JSON.stringify(experimentNodes)};
     const ideaLinks = ${JSON.stringify(ideaLinks)};
+    const propIdeaLinks = ${JSON.stringify(propIdeaLinks)};
     const ideaExpLinks = ${JSON.stringify(ideaExpLinks)};
     ${this._getGraphScript()}
   </script>
@@ -209,7 +233,7 @@ const svg = d3.select('#graph');
 
 let currentTransform = d3.zoomIdentity;
 const zoomBehavior = d3.zoom()
-  .scaleExtent([0.15, 5])
+  .scaleExtent([0.1, 5])
   .on('zoom', (event) => {
     currentTransform = event.transform;
     g.attr('transform', event.transform);
@@ -266,11 +290,13 @@ const relationLabels = {
   alternative_to: '替代',
   refines: '细化',
   belongs_to: '',
+  claim_of: '',
 };
 
 let allNodes = [];
 let allLinks = [];
 let experimentsExpanded = true;
+let propsExpanded = true;
 
 function buildGraph() {
   allNodes = [];
@@ -285,6 +311,17 @@ function buildGraph() {
     l._type = 'idea';
     allLinks.push(l);
   });
+
+  if (propsExpanded) {
+    propNodes.forEach(n => {
+      n._type = 'proposition';
+      allNodes.push(n);
+    });
+    propIdeaLinks.forEach(l => {
+      l._type = 'prop';
+      allLinks.push(l);
+    });
+  }
 
   if (experimentsExpanded) {
     experimentNodes.forEach(n => {
@@ -328,6 +365,23 @@ defs.append('marker')
 let simulation;
 let linkSel, linkLabelSel, nodeSel;
 
+function wrapText(text, maxLen) {
+  if (text.length <= maxLen) return [text];
+  const words = text.split('');
+  const lines = [];
+  let line = '';
+  for (const ch of words) {
+    if ((line + ch).length > maxLen) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line += ch;
+    }
+  }
+  if (line) lines.push(line);
+  return lines.slice(0, 3);
+}
+
 function render() {
   g.selectAll('.links, .link-labels, .nodes').remove();
 
@@ -338,11 +392,11 @@ function render() {
   const linkGroup = g.append('g').attr('class', 'links');
   linkSel = linkGroup.selectAll('line')
     .data(allLinks).join('line')
-    .attr('stroke', d => d._type === 'exp' ? '#555' : '#666')
-    .attr('stroke-width', d => d._type === 'exp' ? 1 : 1.5)
-    .attr('stroke-opacity', d => d._type === 'exp' ? 0.4 : 0.6)
+    .attr('stroke', d => d._type === 'exp' ? '#555' : d._type === 'prop' ? '#B39DDB' : '#666')
+    .attr('stroke-width', d => d._type === 'prop' ? 1.5 : d._type === 'exp' ? 1 : 1.5)
+    .attr('stroke-opacity', d => d._type === 'prop' ? 0.7 : d._type === 'exp' ? 0.4 : 0.6)
     .attr('stroke-dasharray', d => d._type === 'exp' ? '4,3' : 'none')
-    .attr('marker-end', d => d._type === 'exp' ? 'url(#arrow-exp)' : 'url(#arrow-idea)');
+    .attr('marker-end', d => d._type === 'exp' ? 'url(#arrow-exp)' : d._type === 'prop' ? '' : 'url(#arrow-idea)');
 
   const labelGroup = g.append('g').attr('class', 'link-labels');
   linkLabelSel = labelGroup.selectAll('text')
@@ -360,10 +414,12 @@ function render() {
     .style('cursor', 'pointer');
 
   const ideaNodesSel = nodeSel.filter(d => d._type === 'idea');
+  const propNodesSel = nodeSel.filter(d => d._type === 'proposition');
   const expNodesSel = nodeSel.filter(d => d._type === 'experiment');
 
+  // === 思路节点 ===
   ideaNodesSel.append('circle')
-    .attr('r', 30)
+    .attr('r', 28)
     .attr('fill', d => ideaColorMap[d.status] || '#999')
     .attr('stroke', '#fff')
     .attr('stroke-width', 2.5)
@@ -373,19 +429,59 @@ function render() {
     .attr('dy', 1)
     .attr('text-anchor', 'middle')
     .attr('fill', '#fff')
-    .attr('font-size', '11px')
-    .attr('font-weight', 'bold')
+    .attr('font-size', '14px')
     .attr('pointer-events', 'none')
-    .text(d => '💡');
+    .text('💡');
 
   ideaNodesSel.append('text')
-    .attr('dy', 48)
+    .attr('dy', 44)
     .attr('text-anchor', 'middle')
     .attr('fill', 'var(--vscode-descriptionForeground)')
     .attr('font-size', '9px')
     .attr('pointer-events', 'none')
     .text(d => d.id);
 
+  // === 命题节点 ===
+  propNodesSel.each(function(d) {
+    const node = d3.select(this);
+    const lines = wrapText(d.claim, 14);
+    const lineH = 14;
+    const padding = 10;
+    const boxW = 160;
+    const boxH = lines.length * lineH + padding * 2;
+
+    node.append('rect')
+      .attr('x', -boxW / 2).attr('y', -boxH / 2)
+      .attr('width', boxW).attr('height', boxH)
+      .attr('rx', 8)
+      .attr('fill', 'var(--vscode-editor-background, #1e1e1e)')
+      .attr('stroke', '#B39DDB')
+      .attr('stroke-width', 1.5)
+      .style('filter', 'drop-shadow(0 2px 6px rgba(121, 134, 203, 0.3))');
+
+    node.append('text')
+      .attr('x', 0).attr('y', -boxH / 2 + padding - 2)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#B39DDB')
+      .attr('font-size', '9px')
+      .attr('font-weight', '600')
+      .attr('pointer-events', 'none')
+      .text('📌 命题');
+
+    const textStartY = -boxH / 2 + padding + 10;
+    lines.forEach((line, i) => {
+      node.append('text')
+        .attr('x', 0)
+        .attr('y', textStartY + i * lineH)
+        .attr('text-anchor', 'middle')
+        .attr('fill', 'var(--vscode-editor-foreground, #ccc)')
+        .attr('font-size', '11px')
+        .attr('pointer-events', 'none')
+        .text(line);
+    });
+  });
+
+  // === 实验节点 ===
   expNodesSel.append('rect')
     .attr('x', -18).attr('y', -18)
     .attr('width', 36).attr('height', 36)
@@ -411,12 +507,15 @@ function render() {
     .attr('pointer-events', 'none')
     .text(d => d.label);
 
+  // === 交互 ===
   const tooltip = document.getElementById('tooltip');
 
   nodeSel.on('mouseover', (event, d) => {
     tooltip.style.display = 'block';
     if (d._type === 'idea') {
       tooltip.innerHTML = '<strong>💡 ' + d.id + '</strong><br>' + d.fullClaim + '<br>状态: ' + d.status + (d.confidence ? '<br>信心: ' + (d.confidence * 100).toFixed(0) + '%' : '');
+    } else if (d._type === 'proposition') {
+      tooltip.innerHTML = '<strong>📌 命题</strong><br>' + d.claim + '<br>所属思路: ' + d.ideaId;
     } else {
       let html = '<strong>🧪 ' + d.id + '</strong>';
       if (d.purpose) html += '<br>目的: ' + d.purpose;
@@ -427,14 +526,14 @@ function render() {
     }
     let tx = event.pageX + 15;
     let ty = event.pageY - 10;
-    if (tx + 300 > window.innerWidth) tx = event.pageX - 310;
+    if (tx + 320 > window.innerWidth) tx = event.pageX - 330;
     tooltip.style.left = tx + 'px';
     tooltip.style.top = ty + 'px';
   })
   .on('mousemove', (event) => {
     let tx = event.pageX + 15;
     let ty = event.pageY - 10;
-    if (tx + 300 > window.innerWidth) tx = event.pageX - 310;
+    if (tx + 320 > window.innerWidth) tx = event.pageX - 330;
     tooltip.style.left = tx + 'px';
     tooltip.style.top = ty + 'px';
   })
@@ -461,12 +560,24 @@ function render() {
   );
 
   simulation = d3.forceSimulation(allNodes)
-    .force('link', d3.forceLink(allLinks).id(d => d.id).distance(d => d._type === 'exp' ? 100 : 200))
-    .force('charge', d3.forceManyBody().strength(d => d._type === 'exp' ? -200 : -600))
+    .force('link', d3.forceLink(allLinks).id(d => d.id).distance(d => {
+      if (d._type === 'prop') return 120;
+      if (d._type === 'exp') return 100;
+      return 200;
+    }))
+    .force('charge', d3.forceManyBody().strength(d => {
+      if (d._type === 'proposition') return -300;
+      if (d._type === 'experiment') return -200;
+      return -600;
+    }))
     .force('center', d3.forceCenter(w / 2, h / 2))
-    .force('collision', d3.forceCollide().radius(d => d._type === 'exp' ? 30 : 55))
-    .force('x', d3.forceX(w / 2).strength(0.04))
-    .force('y', d3.forceY(h / 2).strength(0.04));
+    .force('collision', d3.forceCollide().radius(d => {
+      if (d._type === 'proposition') return 90;
+      if (d._type === 'experiment') return 30;
+      return 55;
+    }))
+    .force('x', d3.forceX(w / 2).strength(0.03))
+    .force('y', d3.forceY(h / 2).strength(0.03));
 
   simulation.on('tick', () => {
     linkSel.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
@@ -504,15 +615,24 @@ function zoomToFit() {
   );
 }
 
+function toggleProps(show) {
+  propsExpanded = show;
+  if (simulation) simulation.stop();
+  render();
+  document.getElementById('btn-props-show').classList.toggle('active', show);
+  document.getElementById('btn-props-hide').classList.toggle('active', !show);
+}
+
 function toggleExperiments(show) {
   experimentsExpanded = show;
   if (simulation) simulation.stop();
   render();
-
   document.getElementById('btn-expand-all').classList.toggle('active', show);
   document.getElementById('btn-collapse-all').classList.toggle('active', !show);
 }
 
+document.getElementById('btn-props-show').addEventListener('click', () => toggleProps(true));
+document.getElementById('btn-props-hide').addEventListener('click', () => toggleProps(false));
 document.getElementById('btn-expand-all').addEventListener('click', () => toggleExperiments(true));
 document.getElementById('btn-collapse-all').addEventListener('click', () => toggleExperiments(false));
 
@@ -526,9 +646,12 @@ document.getElementById('btn-zoom-fit').addEventListener('click', () => {
   zoomToFit();
 });
 document.getElementById('btn-reset').addEventListener('click', () => {
+  propsExpanded = true;
   experimentsExpanded = true;
   if (simulation) simulation.stop();
   render();
+  document.getElementById('btn-props-show').classList.add('active');
+  document.getElementById('btn-props-hide').classList.remove('active');
   document.getElementById('btn-expand-all').classList.add('active');
   document.getElementById('btn-collapse-all').classList.remove('active');
 });
