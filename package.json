@@ -1,0 +1,137 @@
+{
+  "name": "researchtracker-vscode",
+  "displayName": "ResearchTracker",
+  "description": "Research tracking visualization for VS Code",
+  "version": "0.1.0",
+  "publisher": "researchtracker",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "researchtracker",
+          "title": "ResearchTracker",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "researchtracker": [
+        {
+          "id": "researchtracker-ideas",
+          "name": "ResearchTracker",
+          "type": "tree"
+        }
+      ]
+    },
+    "commands": [
+      { "command": "researchtracker.init", "title": "ResearchTracker: 初始化项目", "icon": "$(project)" },
+      { "command": "researchtracker.idea.add", "title": "添加思路", "icon": "$(sparkle)" },
+      { "command": "researchtracker.idea.update", "title": "更新思路状态", "icon": "$(edit)" },
+      { "command": "researchtracker.experiment.create", "title": "创建实验", "icon": "$(beaker)" },
+      { "command": "researchtracker.experiment.update", "title": "更新实验状态", "icon": "$(settings-edit)" },
+      { "command": "researchtracker.experiment.logResult", "title": "记录实验结果", "icon": "$(output)" },
+      { "command": "researchtracker.reference.add", "title": "ResearchTracker: 添加文献", "icon": "$(book)" },
+      { "command": "researchtracker.log", "title": "ResearchTracker: 添加日志", "icon": "$(note)" },
+      { "command": "researchtracker.refresh", "title": "刷新", "icon": "$(refresh)" },
+      { "command": "researchtracker.search", "title": "搜索", "icon": "$(search)" },
+      { "command": "researchtracker.openGraph", "title": "知识图谱", "icon": "$(graph)" },
+      { "command": "researchtracker.openTimeline", "title": "时间线", "icon": "$(history)" }
+    ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "researchtracker.experiment.create",
+          "when": "viewItem == idea",
+          "group": "1_create@1"
+        },
+        {
+          "command": "researchtracker.idea.update",
+          "when": "viewItem == idea",
+          "group": "2_modify@1"
+        },
+        {
+          "command": "researchtracker.experiment.create",
+          "when": "viewItem == idea",
+          "group": "inline@1"
+        },
+        {
+          "command": "researchtracker.idea.update",
+          "when": "viewItem == idea",
+          "group": "inline@2"
+        },
+        {
+          "command": "researchtracker.experiment.update",
+          "when": "viewItem == experiment",
+          "group": "1_modify@1"
+        },
+        {
+          "command": "researchtracker.experiment.logResult",
+          "when": "viewItem == experiment",
+          "group": "1_modify@2"
+        },
+        {
+          "command": "researchtracker.experiment.update",
+          "when": "viewItem == experiment",
+          "group": "inline@1"
+        },
+        {
+          "command": "researchtracker.experiment.logResult",
+          "when": "viewItem == experiment",
+          "group": "inline@2"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "researchtracker.idea.add",
+          "when": "view == researchtracker-ideas",
+          "group": "navigation@1"
+        },
+        {
+          "command": "researchtracker.search",
+          "when": "view == researchtracker-ideas",
+          "group": "navigation@2"
+        },
+        {
+          "command": "researchtracker.openGraph",
+          "when": "view == researchtracker-ideas",
+          "group": "navigation@3"
+        },
+        {
+          "command": "researchtracker.openTimeline",
+          "when": "view == researchtracker-ideas",
+          "group": "navigation@4"
+        },
+        {
+          "command": "researchtracker.refresh",
+          "when": "view == researchtracker-ideas",
+          "group": "navigation@5"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "lint": "tsc --noEmit",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4",
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.17.50",
+    "@vscode/vsce": "^3.5.0"
+  }
+}

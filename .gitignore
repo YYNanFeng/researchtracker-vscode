@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# VS Code extension package
+*.vsix
+
+# IDE (not .vscode/ since it contains launch.json and task.json)
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tool-specific
+.trae/
+CLAUDE.md
